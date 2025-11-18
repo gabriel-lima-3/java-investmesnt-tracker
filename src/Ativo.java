@@ -7,7 +7,7 @@ public class Ativo {
     private double rentabilidade;
     private double valorAtual;
     private double variacaoAcumulada;
-    LinkedList<Double> historicoRentavel;
+    ListaDuplamenteEncadeada<Double> historicoRentavel;
 
 
 

@@ -5,7 +5,7 @@ public class Investidor {
     private int idade;
     private String perfilRisco;
     private double capitalDisponivel;
-    private LinkedList<Investimento> carteira;
+    private ListaDuplamenteEncadeada<Investimento> carteira;
 
 
 
