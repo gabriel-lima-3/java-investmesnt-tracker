@@ -9,6 +9,4 @@ public class Ativo {
     private double variacaoAcumulada;
     ListaDuplamenteEncadeada<Double> historicoRentavel;
 
-
-
 }
