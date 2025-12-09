@@ -1,3 +1,5 @@
+import java.util.Comparator;
+
 public class ListaDuplamenteEncadeada<T> {
     private Node<T> primeiro;
     private Node<T> ultimo;
@@ -137,4 +139,26 @@ public class ListaDuplamenteEncadeada<T> {
         primeiro = ultimo = null;
         tamanho = 0;
     }
+
+    public void insertionSort(){
+
+    }
+
+    public void mergeSort(){
+
+    }
+
+    public void quickSort(){
+
+    }
+
+    public void buscaBinaria(){
+
+    }
+    public T buscaBinaria(T elemento, Comparator<T> comparador) {
+        return null;
+    }
+
+
+
 }
