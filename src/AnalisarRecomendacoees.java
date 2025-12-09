@@ -1,3 +1,5 @@
+import java.util.List;
+
 public class AnalisarRecomendacoees {
 
     private ListaDuplamenteEncadeada <Ativo> todosAtivos;
@@ -9,6 +11,12 @@ public class AnalisarRecomendacoees {
         this.todosAtivos = todosAtivos;
     }
 
+    public ListaDuplamenteEncadeada<Ativo> getTodosAtivos() {
+        return todosAtivos;
+    }
 
+    public void setTodosAtivos(ListaDuplamenteEncadeada<Ativo> todosAtivos) {
+        this.todosAtivos = todosAtivos;
+    }
 
 }

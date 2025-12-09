@@ -12,6 +12,15 @@ public class ListaDuplamenteEncadeada<T> {
         this.tamanho = 0;
     }
 
+    public Node<T> getPrimeiro() {
+        return primeiro;
+    }
+
+    public Node<T> getUltimo() {
+        return ultimo;
+    }
+
+
     // 1. Inserir no início
     public void inserirInicio(T dado) {
         Node<T> novoNo = new Node<>(dado);
