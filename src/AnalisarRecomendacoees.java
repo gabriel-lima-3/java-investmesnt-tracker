@@ -1,5 +1,3 @@
-import java.util.List;
-
 public class AnalisarRecomendacoees {
 
     private ListaDuplamenteEncadeada <Ativo> todosAtivos;

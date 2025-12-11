@@ -10,17 +10,21 @@ public class Investimento {
     private double quantidade;
     private LocalDateTime dataInvestimento;
     private double valorAtual;
+    private ListaDuplamenteEncadeada<Double> historicoVariacoes;
 
     public Investimento() {
+        this.historicoVariacoes = new ListaDuplamenteEncadeada<>();
     }
 
-    public Investimento(Ativo ativo, Investidor investidor, double valorInvestido, double quantidade, LocalDateTime dataInvestimento, double valorAtual) {
+    public Investimento(Ativo ativo, Investidor investidor, double valorInvestido,
+                        double quantidade, LocalDateTime dataInvestimento, double valorAtual) {
         this.ativo = ativo;
         this.investidor = investidor;
         this.valorInvestido = valorInvestido;
         this.quantidade = quantidade;
         this.dataInvestimento = dataInvestimento;
         this.valorAtual = valorAtual;
+        this.historicoVariacoes = new ListaDuplamenteEncadeada<>(); // ← ADICIONE ESTA LINHA
     }
 
     public Ativo getAtivo() {
@@ -72,20 +76,31 @@ public class Investimento {
     }
 
     public double calcularLucroPrejuizo(){
-
-        return  1;
+        return this.valorAtual - this.valorInvestido;
     }
 
     public double calcularRentabilidade(){
-        return  1;
+        if (this.valorInvestido == 0) return 0;
+        return ((this.valorAtual - this.valorInvestido) / this.valorInvestido) * 100;
     }
 
-    public void atualizarValor(){
-
+    public void atualizarValor(double variacaoPercentual){
+        this.historicoVariacoes.inserirFim(variacaoPercentual);
+        this.valorAtual = this.valorAtual * (1 + (variacaoPercentual / 100));
     }
 
+    public boolean isAltoRisco() {
+        return ativo != null && ativo.getRisco().equalsIgnoreCase("Alto");
+    }
 
-
+    @Override
+    public String toString() {
+        return String.format("Investimento: %s em %s | Valor: R$%.2f | Rent: %.1f%%",
+                investidor != null ? investidor.getNome() : "N/A",
+                ativo != null ? ativo.getNome() : "N/A",
+                valorAtual,
+                calcularRentabilidade());
+    }
 
 
 
