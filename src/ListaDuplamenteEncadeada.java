@@ -331,4 +331,34 @@ public class ListaDuplamenteEncadeada<T> {
         int comparacoes = 0;
         int trocas = 0;
     }
+
+    public void remover(int index) {
+        if (index < 0 || index >= tamanho) {
+            throw new IndexOutOfBoundsException("Índice fora do limite.");
+        }
+
+        Node<T> removido = getNode(index); // Reutiliza o método getNode para achar o alvo
+
+        // Caso 1: Remove o primeiro elemento
+        if (removido == primeiro) {
+            primeiro = primeiro.next;
+            if (primeiro != null) {
+                primeiro.prev = null;
+            } else {
+                ultimo = null; // A lista ficou vazia
+            }
+        }
+        // Caso 2: Remove o último elemento
+        else if (removido == ultimo) {
+            ultimo = ultimo.prev;
+            ultimo.next = null;
+        }
+        // Caso 3: Remove do meio
+        else {
+            removido.prev.next = removido.next;
+            removido.next.prev = removido.prev;
+        }
+
+        tamanho--; // Reduz o contador de tamanho
+    }
 }
