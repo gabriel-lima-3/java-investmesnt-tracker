@@ -1,33 +1,42 @@
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Scanner;
 
 public class Main {
+    
+    // Listas globais para facilitar o acesso nos métodos estáticos
+    private static ListaDuplamenteEncadeada<Ativo> listaAtivos = new ListaDuplamenteEncadeada<>();
+    private static ListaDuplamenteEncadeada<Investidor> listaInvestidores = new ListaDuplamenteEncadeada<>();
+    private static ListaDuplamenteEncadeada<Transacao> listaTransacoes = new ListaDuplamenteEncadeada<>();
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        ListaDuplamenteEncadeada<Ativo> listaAtivos = new ListaDuplamenteEncadeada<>();
-        ListaDuplamenteEncadeada<Investidor> listaInvestidores = new ListaDuplamenteEncadeada<>();
-
-        inicializarDados(listaAtivos, listaInvestidores);
+        
+        inicializarDados();
         AnalisarRecomendacoees analisador = new AnalisarRecomendacoees(listaAtivos);
 
+        Investidor investidorLogado = listaInvestidores.get(0);
+
         int opcao = 0;
-        while (opcao != 9) {
+        while (opcao != 99) {
             System.out.println("\n#############################################");
-            System.out.println("# SISTEMA INTELIGENTE DE INVESTIMENTOS v1.0 #");
+            System.out.println("# SISTEMA DE GESTÃO DE INVESTIMENTOS        #");
             System.out.println("#############################################");
+            System.out.println("Usuário: " + investidorLogado.getNome() + " | Saldo: R$ " + String.format("%.2f", investidorLogado.getCapitalDisponivel()));
+            System.out.println("---------------------------------------------");
             System.out.println("1. Listar Ativos Disponíveis");
-            System.out.println("2. Buscar Ativo por Nome (Linear)");
-            System.out.println("3. Buscar Ativo por Código (Binária)");
-            System.out.println("4. Comparar Algoritmos de Ordenação");
-            System.out.println("5. Ver Carteira do Investidor");
-            System.out.println("6. Gerar Recomendações (IA Simbólica)");
-            System.out.println("7. Relatório Top 5 Rentabilidade");
-            System.out.println("9. Sair");
-            System.out.print("Escolha uma opção: ");
+            System.out.println("2. Buscar Ativo (Linear/Binária)");
+            System.out.println("3. Ver Minha Carteira");
+            System.out.println("4. Realizar Investimento (COMPRAR)");
+            System.out.println("5. Resgatar Investimento (VENDER)");
+            System.out.println("6. Obter Recomendações (IA)");
+            System.out.println("7. Relatórios de Performance (Ordenação)");
+            System.out.println("8. Histórico de Transações");
+            System.out.println("99. Sair");
+            System.out.print("Escolha: ");
 
             try {
-                String input = scanner.nextLine();
-                opcao = Integer.parseInt(input);
+                opcao = Integer.parseInt(scanner.nextLine());
             } catch (NumberFormatException e) {
                 opcao = 0;
             }
@@ -37,96 +46,199 @@ public class Main {
                     listaAtivos.imprimirListaFormatada();
                     break;
                 case 2:
-                    System.out.print("Digite o nome do ativo: ");
-                    String nome = scanner.nextLine();
-                    Ativo buscaNome = new Ativo();
-                    buscaNome.setNome(nome);
-                    Ativo resLinear = listaAtivos.buscarLinear(buscaNome, Comparador.porNome());
-                    if (resLinear != null) System.out.println("ENCONTRADO: " + resLinear);
-                    else System.out.println("Não encontrado.");
+                    menuBusca(scanner);
                     break;
                 case 3:
-                    System.out.print("Digite o código (ex: PETR4): ");
-                    String cod = scanner.nextLine();
-                    Ativo buscaCod = new Ativo();
-                    buscaCod.setCodigo(cod);
-                    
-                    // IMPORTANTE: Busca binária exige ordenação prévia
-                    System.out.println("Ordenando lista por código para permitir busca binária...");
-                    listaAtivos.quickSort(Comparador.porCodigo());
-                    
-                    Ativo resBin = listaAtivos.buscaBinaria(buscaCod, Comparador.porCodigo());
-                    if (resBin != null) System.out.println("ENCONTRADO: " + resBin);
-                    else System.out.println("Não encontrado.");
+                    System.out.println("\n--- CARTEIRA DE " + investidorLogado.getNome().toUpperCase() + " ---");
+                    if (investidorLogado.getCarteira().getTamanho() == 0) System.out.println("Sua carteira está vazia.");
+                    else investidorLogado.getCarteira().imprimirListaFormatada();
                     break;
                 case 4:
-                    System.out.println("\n--- COMPARATIVO DE PERFORMANCE ---");
-                    System.out.println(">> Insertion Sort (Por Rentabilidade):");
-                    MetricasOrdenacao m1 = listaAtivos.insertionSort(Comparador.porRentabilidade());
-                    m1.imprimirMetricas();
-                    
-                    System.out.println(">> Merge Sort (Por Variação Acumulada):");
-                    MetricasOrdenacao m2 = listaAtivos.mergeSort(Comparador.porVariacaoAcumulada());
-                    m2.imprimirMetricas();
-                    
-                    System.out.println(">> Quick Sort (Por Valor Atual):");
-                    MetricasOrdenacao m3 = listaAtivos.quickSort(Comparador.porValorAtual());
-                    m3.imprimirMetricas();
+                    realizarInvestimento(scanner, investidorLogado);
                     break;
                 case 5:
-                    Investidor inv = listaInvestidores.get(0); // Pega o primeiro para teste
-                    System.out.println("Investidor: " + inv.getNome());
-                    System.out.println("Capital Livre: R$ " + inv.getCapitalDisponivel());
-                    System.out.println("--- CARTEIRA ---");
-                    if (inv.getCarteira().getTamanho() == 0) System.out.println("Vazia.");
-                    else inv.getCarteira().imprimirListaFormatada();
+                    resgatarInvestimento(scanner, investidorLogado);
                     break;
                 case 6:
-                    Investidor cliente = listaInvestidores.get(0);
-                    ListaDuplamenteEncadeada<Ativo> recs = analisador.gerarRecomendacoes(cliente);
-                    System.out.println("\n=== RECOMENDAÇÕES PARA " + cliente.getNome() + " (" + cliente.getPerfilRisco() + ") ===");
-                    if (recs.getTamanho() == 0) System.out.println("Nenhum ativo recomendado no momento.");
-                    else recs.imprimirListaFormatada();
+                    ListaDuplamenteEncadeada<Ativo> recs = analisador.gerarRecomendacoes(investidorLogado);
+                    System.out.println("\n--- RECOMENDAÇÕES PERSONALIZADAS ---");
+                    recs.imprimirListaFormatada();
                     break;
                 case 7:
-                    analisador.relatorioTop5Rentabilidade();
+                    menuRelatorios();
                     break;
-                case 9:
-                    System.out.println("Encerrando sistema...");
+                case 8:
+                    System.out.println("\n--- HISTÓRICO DE TRANSAÇÕES ---");
+                    if (listaTransacoes.getTamanho() == 0) System.out.println("Nenhuma transação registrada.");
+                    else {
+                        for(int i=0; i<listaTransacoes.getTamanho(); i++){
+                            Transacao t = listaTransacoes.get(i);
+                            System.out.printf("[%s] %s - %s: R$ %.2f\n", t.getDate().toString(), t.getTipo(), t.getAtivo().getCodigo(), t.getValor());
+                        }
+                    }
+                    break;
+                case 99:
+                    System.out.println("Saindo...");
                     break;
                 default:
                     System.out.println("Opção inválida.");
             }
         }
-        scanner.close();
     }
 
-    private static void inicializarDados(ListaDuplamenteEncadeada<Ativo> ativos, ListaDuplamenteEncadeada<Investidor> investidores) {
-        // Criando históricos fictícios
-        ListaDuplamenteEncadeada<Double> histPositivo = new ListaDuplamenteEncadeada<>();
-        histPositivo.inserirFim(1.5); histPositivo.inserirFim(2.0); histPositivo.inserirFim(0.5);
+    // --- MÉTODOS DE NEGÓCIO ---
 
-        ListaDuplamenteEncadeada<Double> histNegativo = new ListaDuplamenteEncadeada<>();
-        histNegativo.inserirFim(-1.0); histNegativo.inserirFim(-2.5); histNegativo.inserirFim(-0.5);
+    private static void realizarInvestimento(Scanner scanner, Investidor inv) {
+        System.out.println("\n--- NOVO INVESTIMENTO ---");
+        System.out.print("Digite o código do ativo (ex: PETR4): ");
+        String codigo = scanner.nextLine();
+
+        // Busca o ativo
+        listaAtivos.quickSort(Comparador.porCodigo());
+        Ativo ativoBusca = new Ativo();
+        ativoBusca.setCodigo(codigo);
+        Ativo ativoAlvo = listaAtivos.buscaBinaria(ativoBusca, Comparador.porCodigo());
+
+        if (ativoAlvo == null) {
+            System.out.println("Ativo não encontrado!");
+            return;
+        }
+
+        System.out.println("Ativo selecionado: " + ativoAlvo.getNome() + " | Preço: R$ " + ativoAlvo.getValorAtual());
+        System.out.print("Digite a quantidade a comprar: ");
+        double qtd = 0;
+        try {
+             qtd = Double.parseDouble(scanner.nextLine());
+        } catch (Exception e) { System.out.println("Valor inválido"); return; }
+
+        double custoTotal = qtd * ativoAlvo.getValorAtual();
+
+        // Validações
+        if (custoTotal > inv.getCapitalDisponivel()) {
+            System.out.println("ERRO: Saldo insuficiente. Disponível: R$ " + inv.getCapitalDisponivel());
+            return;
+        }
+
+        // Validação de Risco (80% em Alto Risco)
+        if (ativoAlvo.getRisco().equalsIgnoreCase("Alto")) {
+             double totalPatrimonio = custoTotal;
+             double totalAltoRisco = custoTotal;
+             
+             for(int i=0; i<inv.getCarteira().getTamanho(); i++){
+                 Investimento carteiraItem = inv.getCarteira().get(i);
+                 totalPatrimonio += carteiraItem.getValorAtual();
+                 if(carteiraItem.getAtivo().getRisco().equalsIgnoreCase("Alto")){
+                     totalAltoRisco += carteiraItem.getValorAtual();
+                 }
+             }
+             
+             if ((totalAltoRisco / totalPatrimonio) > 0.80) {
+                 System.out.println("BLOQUEADO: Investimento excede limite de 80% em alto risco.");
+                 return;
+             }
+        }
+
+        // Efetivação
+        inv.setCapitalDisponivel(inv.getCapitalDisponivel() - custoTotal);
+        
+        Investimento novoInv = new Investimento(ativoAlvo, inv, custoTotal, qtd, LocalDateTime.now(), custoTotal);
+        inv.getCarteira().inserirFim(novoInv);
+
+        Transacao t = new Transacao("COMPRA", inv, ativoAlvo, custoTotal, new Date(), 0);
+        listaTransacoes.inserirFim(t);
+
+        System.out.println("Investimento realizado com sucesso!");
+    }
+
+    private static void resgatarInvestimento(Scanner scanner, Investidor inv) {
+        System.out.println("\n--- RESGATE DE INVESTIMENTO ---");
+        if (inv.getCarteira().getTamanho() == 0) {
+            System.out.println("Carteira vazia.");
+            return;
+        }
+        
+        inv.getCarteira().imprimirListaFormatada();
+        System.out.print("Digite o número do item na lista para resgatar (ex: 1): ");
+        int index = -1;
+        try {
+            index = Integer.parseInt(scanner.nextLine()) - 1;
+        } catch(Exception e) {}
+
+        if (index < 0 || index >= inv.getCarteira().getTamanho()) {
+            System.out.println("Índice inválido.");
+            return;
+        }
+
+        Investimento item = inv.getCarteira().get(index);
+        double valorResgate = item.getQuantidade() * item.getAtivo().getValorAtual();
+        double lucro = valorResgate - item.getValorInvestido();
+
+        inv.setCapitalDisponivel(inv.getCapitalDisponivel() + valorResgate);
+        
+        Transacao t = new Transacao("VENDA", inv, item.getAtivo(), valorResgate, new Date(), lucro);
+        listaTransacoes.inserirFim(t);
+
+        item.setQuantidade(0); 
+        item.setValorAtual(0);
+        System.out.println("Resgate realizado! Valor creditado: R$ " + valorResgate + " (Lucro/Prej: " + lucro + ")");
+        System.out.println("Nota: O item permanece no histórico da carteira com valor zerado.");
+    }
+
+    private static void menuBusca(Scanner scanner) {
+        System.out.println("1. Por Nome (Linear)");
+        System.out.println("2. Por Código (Binária)");
+        String op = scanner.nextLine();
+        
+        if (op.equals("1")) {
+            System.out.print("Nome: ");
+            String nome = scanner.nextLine();
+            Ativo busca = new Ativo(); busca.setNome(nome);
+            Ativo res = listaAtivos.buscarLinear(busca, Comparador.porNome());
+            if (res != null) System.out.println("Encontrado: " + res);
+            else System.out.println("Não encontrado.");
+        } else {
+            System.out.print("Código: ");
+            String cod = scanner.nextLine();
+            Ativo busca = new Ativo(); busca.setCodigo(cod);
+            listaAtivos.quickSort(Comparador.porCodigo());
+            Ativo res = listaAtivos.buscaBinaria(busca, Comparador.porCodigo());
+            if (res != null) System.out.println("Encontrado: " + res);
+            else System.out.println("Não encontrado.");
+        }
+    }
+    
+    private static void menuRelatorios() {
+        System.out.println("\n--- RELATÓRIOS DE PERFORMANCE ---");
+        System.out.println("Ordenando por Rentabilidade (Insertion Sort)...");
+        MetricasOrdenacao m1 = listaAtivos.insertionSort(Comparador.porRentabilidade());
+        m1.imprimirMetricas();
+        
+        System.out.println("\nOrdenando por Variação (Merge Sort)...");
+        MetricasOrdenacao m2 = listaAtivos.mergeSort(Comparador.porVariacaoAcumulada());
+        m2.imprimirMetricas();
+        
+        System.out.println("\nOrdenando por Valor (Quick Sort)...");
+        MetricasOrdenacao m3 = listaAtivos.quickSort(Comparador.porValorAtual());
+        m3.imprimirMetricas();
+    }
+
+    private static void inicializarDados() {
+        // Históricos
+        ListaDuplamenteEncadeada<Double> h1 = new ListaDuplamenteEncadeada<>();
+        h1.inserirFim(1.0); h1.inserirFim(2.0); h1.inserirFim(0.5);
+        
+        ListaDuplamenteEncadeada<Double> hRuim = new ListaDuplamenteEncadeada<>();
+        hRuim.inserirFim(-1.0); hRuim.inserirFim(-2.0); hRuim.inserirFim(-1.5);
 
         // Ativos
-        // Ativo(codigo, nome, tipo, risco, rentabilidade, valorAtual, variacaoAcum, historico)
-        ativos.inserirFim(new Ativo("PETR4", "Petrobras", "Ação", "Alto", 15.0, 34.50, 10.0, histPositivo));
-        ativos.inserirFim(new Ativo("VALE3", "Vale", "Ação", "Alto", 12.0, 68.00, -5.0, histNegativo)); // Deve ser penalizado
-        ativos.inserirFim(new Ativo("SELIC", "Tesouro Selic", "Renda Fixa", "Baixo", 13.75, 1000.0, 1.0, histPositivo));
-        ativos.inserirFim(new Ativo("MXRF11", "Maxi Renda", "Fundo", "Medio", 1.1, 10.50, 2.0, histPositivo));
-        ativos.inserirFim(new Ativo("BTC", "Bitcoin", "Cripto", "Alto", 45.0, 300000.0, 20.0, histPositivo));
+        listaAtivos.inserirFim(new Ativo("PETR4", "Petrobras", "Ação", "Alto", 15.5, 30.00, 10.0, h1));
+        listaAtivos.inserirFim(new Ativo("VALE3", "Vale", "Ação", "Alto", -5.0, 70.00, -10.0, hRuim));
+        listaAtivos.inserirFim(new Ativo("ITUB4", "Itaú", "Ação", "Medio", 8.0, 25.00, 5.0, h1));
+        listaAtivos.inserirFim(new Ativo("TESOURO", "Tesouro Direto", "Renda Fixa", "Baixo", 12.0, 100.00, 12.0, h1));
+        listaAtivos.inserirFim(new Ativo("BTC", "Bitcoin", "Cripto", "Alto", 50.0, 200000.0, 40.0, h1));
 
         // Investidor
-        ListaDuplamenteEncadeada<Investimento> carteira = new ListaDuplamenteEncadeada<>();
-        // Adiciona um investimento inicial para testar regra de 80%
-        // Investimento(ativo, investidor, valorInv, qtd, data, valorAtual)
-        Investimento inv1 = new Investimento(ativos.get(0), null, 5000, 100, LocalDateTime.now(), 5500);
-        carteira.inserirFim(inv1);
-
-        Investidor joao = new Investidor("João Silva", 30, "Moderado", 50000.0, carteira);
-        inv1.setInvestidor(joao); // Atualiza referência
-
-        investidores.inserirFim(joao);
+        Investidor inv = new Investidor("Maria Souza", 30, "Moderado", 100000.00, new ListaDuplamenteEncadeada<>());
+        listaInvestidores.inserirFim(inv);
     }
 }
