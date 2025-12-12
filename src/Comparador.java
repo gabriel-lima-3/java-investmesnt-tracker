@@ -64,4 +64,23 @@ public class Comparador {
             }
         };
     }
+
+    // Para Relatório: Risco x Retorno (Maior índice primeiro)
+    public static Comparator<Ativo> porRiscoRetorno() {
+        return new Comparator<Ativo>() {
+            @Override
+            public int compare(Ativo a1, Ativo a2) {
+                double indice1 = calcularIndice(a1);
+                double indice2 = calcularIndice(a2);
+                return Double.compare(indice2, indice1);
+            }
+
+            private double calcularIndice(Ativo a) {
+                int pesoRisco = 3; // Padrão Alto
+                if (a.getRisco().equalsIgnoreCase("Baixo")) pesoRisco = 1;
+                else if (a.getRisco().equalsIgnoreCase("Medio") || a.getRisco().equalsIgnoreCase("Médio")) pesoRisco = 2;
+                return a.getRentabilidade() / pesoRisco;
+            }
+        };
+    }
 }
