@@ -87,4 +87,10 @@ public class Ativo {
     public void setHistoricoRentavel(ListaDuplamenteEncadeada<Double> historicoRentavel) {
         this.historicoRentavel = historicoRentavel;
     }
+
+    @Override
+    public String toString() {
+        return String.format("[%s] %s | Tipo: %s | Risco: %s | Preço: R$ %.2f | Rent.: %.2f%%", 
+                codigo, nome, tipo, risco, valorAtual, rentabilidade);
+    }
 }
