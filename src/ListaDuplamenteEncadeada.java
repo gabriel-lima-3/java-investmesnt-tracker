@@ -16,12 +16,13 @@ public class ListaDuplamenteEncadeada<T> {
         return tamanho;
     }
 
-    // Método para obter um Node na posição
+    // Método otimizado para obter um Node na posição
     public Node<T> getNode(int index) {
         if (index < 0 || index >= tamanho) {
             throw new IndexOutOfBoundsException("Índice fora do limite.");
         }
         Node<T> atual = primeiro;
+        // Otimização: busca do final se o índice for maior que a metade
         if (index > tamanho / 2) {
             atual = ultimo;
             for (int i = tamanho - 1; i > index; i--) {
@@ -87,32 +88,19 @@ public class ListaDuplamenteEncadeada<T> {
         tamanho++;
     }
 
-    // Converter lista para array
-    public Object[] toArray() {
-        Object[] array = new Object[tamanho];
-        Node<T> atual = primeiro;
-        for (int i = 0; i < tamanho; i++) {
-            array[i] = atual.data;
-            atual = atual.next;
-        }
-        return array;
-    }
-
-    // Reconstruir lista a partir de array
-    private void reconstruirListaDoArray(Object[] array) {
-        limpar();
-        for (Object obj : array) {
-            inserirFim((T) obj);
-        }
-    }
-
     // Limpar lista
     public void limpar() {
         primeiro = ultimo = null;
         tamanho = 0;
     }
 
-    // Busca Linear
+    // Método auxiliar para obter o dado em um índice (útil para a Main)
+    public T get(int index) {
+        return getNode(index).data;
+    }
+
+    // --- ALGORITMOS DE BUSCA ---
+
     public T buscarLinear(T valor, Comparator<T> comparador) {
         long startTime = System.nanoTime();
         int comparacoes = 0;
@@ -122,34 +110,63 @@ public class ListaDuplamenteEncadeada<T> {
             comparacoes++;
             if (comparador.compare(atual.data, valor) == 0) {
                 long endTime = System.nanoTime();
-                long tempoNano = endTime - startTime;
-                System.out.println("--- Métricas de Busca Linear ---");
-                System.out.printf("Tempo: %.3f ms | Comparações: %d\n",
-                        tempoNano / 1_000_000.0, comparacoes);
+                exibirMetricas("Busca Linear", endTime - startTime, comparacoes, 0);
                 return atual.data;
             }
             atual = atual.next;
         }
 
         long endTime = System.nanoTime();
-        long tempoNano = endTime - startTime;
-        System.out.println("--- Métricas de Busca Linear ---");
-        System.out.printf("Tempo: %.3f ms | Comparações: %d\n",
-                tempoNano / 1_000_000.0, comparacoes);
+        exibirMetricas("Busca Linear", endTime - startTime, comparacoes, 0);
         return null;
     }
 
+    public T buscaBinaria(T elemento, Comparator<T> comparador) {
+        System.out.println("\n=== BUSCA BINÁRIA (NA LISTA) ===");
+        System.out.println("Nota: A lista deve estar ordenada pelo critério de busca.");
+        
+        long startTime = System.nanoTime();
+        int comparacoes = 0;
+
+        int inicio = 0;
+        int fim = tamanho - 1;
+
+        while (inicio <= fim) {
+            comparacoes++;
+            int meio = (inicio + fim) / 2;
+            
+            // Navega até o nó do meio (sem usar array)
+            Node<T> nodeMeio = getNode(meio);
+            
+            int resultado = comparador.compare(nodeMeio.data, elemento);
+
+            if (resultado == 0) {
+                long endTime = System.nanoTime();
+                exibirMetricas("Busca Binária", endTime - startTime, comparacoes, 0);
+                return nodeMeio.data;
+            } else if (resultado < 0) {
+                // Se elemento do meio é menor que o buscado, busca na direita
+                inicio = meio + 1;
+            } else {
+                // Se elemento do meio é maior, busca na esquerda
+                fim = meio - 1;
+            }
+        }
+
+        long endTime = System.nanoTime();
+        exibirMetricas("Busca Binária", endTime - startTime, comparacoes, 0);
+        return null;
+    }
+
+    // --- ALGORITMOS DE ORDENAÇÃO ---
+
     // Insertion Sort
     public MetricasOrdenacao insertionSort(Comparator<T> comparador) {
-        System.out.println("\n=== EXECUTANDO INSERTION SORT ===");
         long startTime = System.nanoTime();
         int comparacoes = 0;
         int trocas = 0;
 
-        if (tamanho <= 1) {
-            long endTime = System.nanoTime();
-            return new MetricasOrdenacao(endTime - startTime, 0, 0);
-        }
+        if (tamanho <= 1) return new MetricasOrdenacao(0,0,0);
 
         Node<T> atual = primeiro.next;
         while (atual != null) {
@@ -157,9 +174,10 @@ public class ListaDuplamenteEncadeada<T> {
             while (j.prev != null) {
                 comparacoes++;
                 if (comparador.compare(j.prev.data, j.data) > 0) {
-                    T tempData = j.data;
+                    // Troca os dados
+                    T temp = j.data;
                     j.data = j.prev.data;
-                    j.prev.data = tempData;
+                    j.prev.data = temp;
                     trocas++;
                     j = j.prev;
                 } else {
@@ -170,58 +188,34 @@ public class ListaDuplamenteEncadeada<T> {
         }
 
         long endTime = System.nanoTime();
-        MetricasOrdenacao metricas = new MetricasOrdenacao(
-                endTime - startTime, comparacoes, trocas
-        );
-        System.out.println("Métricas do Insertion Sort:");
-        metricas.imprimirMetricas();
-        return metricas;
+        MetricasOrdenacao m = new MetricasOrdenacao(endTime - startTime, comparacoes, trocas);
+        return m;
     }
 
     // Merge Sort
     public MetricasOrdenacao mergeSort(Comparator<T> comparador) {
-        System.out.println("\n=== EXECUTANDO MERGE SORT ===");
-        if (tamanho <= 1) {
-            return new MetricasOrdenacao(0, 0, 0);
-        }
-
         long startTime = System.nanoTime();
         MetricasContainer mc = new MetricasContainer();
 
-        this.primeiro = mergeSortRecursivo(this.primeiro, mc, comparador);
-
-        // Reconstruir referência do último
-        Node<T> novoUltimo = this.primeiro;
-        while (novoUltimo != null && novoUltimo.next != null) {
-            novoUltimo.next.prev = novoUltimo;
-            novoUltimo = novoUltimo.next;
+        if (primeiro != null && primeiro.next != null) {
+            this.primeiro = mergeSortRecursivo(this.primeiro, mc, comparador);
+            // Corrige referência do último após ordenação
+            Node<T> temp = primeiro;
+            while (temp.next != null) temp = temp.next;
+            this.ultimo = temp;
         }
-        this.ultimo = novoUltimo;
 
         long endTime = System.nanoTime();
-        MetricasOrdenacao metricas = new MetricasOrdenacao(
-                endTime - startTime, mc.comparacoes, mc.trocas
-        );
-        System.out.println("Métricas do Merge Sort:");
-        metricas.imprimirMetricas();
-        return metricas;
+        return new MetricasOrdenacao(endTime - startTime, mc.comparacoes, mc.trocas);
     }
 
-    // Classe auxiliar para métricas
-    private class MetricasContainer {
-        int comparacoes = 0;
-        int trocas = 0;
-    }
-
-    // Merge Sort recursivo
     private Node<T> mergeSortRecursivo(Node<T> head, MetricasContainer mc, Comparator<T> comparador) {
-        if (head == null || head.next == null) {
-            return head;
-        }
+        if (head == null || head.next == null) return head;
 
         Node<T> mid = getMid(head);
         Node<T> nextToMid = mid.next;
-        mid.next = null;
+        mid.next = null; // Quebra a lista em duas
+        if (nextToMid != null) nextToMid.prev = null;
 
         Node<T> left = mergeSortRecursivo(head, mc, comparador);
         Node<T> right = mergeSortRecursivo(nextToMid, mc, comparador);
@@ -229,172 +223,112 @@ public class ListaDuplamenteEncadeada<T> {
         return merge(left, right, mc, comparador);
     }
 
-    // Encontrar meio da lista
     private Node<T> getMid(Node<T> head) {
-        Node<T> slow = head;
-        Node<T> fast = head.next;
-        while (fast != null && fast.next != null) {
+        if (head == null) return null;
+        Node<T> slow = head, fast = head;
+        while (fast.next != null && fast.next.next != null) {
             slow = slow.next;
             fast = fast.next.next;
         }
         return slow;
     }
 
-    // Merge (CORRIGIDO - FUNCIONAL)
     private Node<T> merge(Node<T> a, Node<T> b, MetricasContainer mc, Comparator<T> comparador) {
-        // Se uma lista é vazia, retorna a outra
         if (a == null) return b;
         if (b == null) return a;
 
-        Node<T> resultado;
-
-        // Escolhe o menor como cabeça da lista mesclada
+        Node<T> result;
         mc.comparacoes++;
         if (comparador.compare(a.data, b.data) <= 0) {
-            resultado = a;
-            resultado.next = merge(a.next, b, mc, comparador);
+            result = a;
+            result.next = merge(a.next, b, mc, comparador);
+            if (result.next != null) result.next.prev = result;
         } else {
-            resultado = b;
-            resultado.next = merge(a, b.next, mc, comparador);
+            result = b;
+            result.next = merge(a, b.next, mc, comparador);
+            if (result.next != null) result.next.prev = result;
         }
-
-        // Ajusta o ponteiro prev
-        if (resultado.next != null) {
-            resultado.next.prev = resultado;
-        }
-
-        mc.trocas++;
-        return resultado;
+        return result;
     }
 
-    // Quick Sort
+    // Quick Sort (Sem Array - Partition com troca de dados)
     public MetricasOrdenacao quickSort(Comparator<T> comparador) {
-        System.out.println("\n=== EXECUTANDO QUICK SORT ===");
-        System.out.println("Ordenando por valor atual...");
-
         long startTime = System.nanoTime();
-        int comparacoes = 0;
-        int trocas = 0;
-
-        if (tamanho <= 1) {
-            long endTime = System.nanoTime();
-            return new MetricasOrdenacao(endTime - startTime, 0, 0);
-        }
-
-        // Converter para array, ordenar, converter de volta
-        Object[] array = this.toArray();
-
-        // Ordenar array com Quick Sort
-        quickSortArray(array, 0, array.length - 1, comparador);
-
-        // Métricas estimadas para Quick Sort
-        comparacoes = (int)(tamanho * (Math.log(tamanho) / Math.log(2)));
-        trocas = comparacoes / 2;
-
-        reconstruirListaDoArray(array);
-
+        MetricasContainer mc = new MetricasContainer();
+        
+        // Passa o último nó como referência inicial do fim
+        quickSortRecursivo(this.primeiro, this.ultimo, comparador, mc);
+        
         long endTime = System.nanoTime();
-        MetricasOrdenacao metricas = new MetricasOrdenacao(
-                endTime - startTime, comparacoes, trocas
-        );
-
-        System.out.println("Métricas do Quick Sort:");
-        metricas.imprimirMetricas();
-        return metricas;
+        return new MetricasOrdenacao(endTime - startTime, mc.comparacoes, mc.trocas);
     }
 
-    // Quick Sort em array
-    private void quickSortArray(Object[] array, int low, int high, Comparator<T> comparador) {
-        if (low < high) {
-            int pi = partitionArray(array, low, high, comparador);
-            quickSortArray(array, low, pi - 1, comparador);
-            quickSortArray(array, pi + 1, high, comparador);
+    private void quickSortRecursivo(Node<T> inicio, Node<T> fim, Comparator<T> comparador, MetricasContainer mc) {
+        if (inicio != null && fim != null && inicio != fim && inicio != fim.next) {
+            // Partition retorna o nó pivô já na posição correta
+            Node<T> pivo = partition(inicio, fim, comparador, mc);
+            
+            // Ordena antes do pivô
+            if (pivo.prev != null)
+                quickSortRecursivo(inicio, pivo.prev, comparador, mc);
+            
+            // Ordena depois do pivô
+            if (pivo.next != null)
+                quickSortRecursivo(pivo.next, fim, comparador, mc);
         }
     }
 
-    // Partição para Quick Sort
-    private int partitionArray(Object[] array, int low, int high, Comparator<T> comparador) {
-        T pivot = (T) array[high];
-        int i = low - 1;
+    private Node<T> partition(Node<T> inicio, Node<T> fim, Comparator<T> comparador, MetricasContainer mc) {
+        T pivoValor = fim.data;
+        Node<T> i = inicio.prev; // Índice do menor elemento
 
-        for (int j = low; j < high; j++) {
-            if (comparador.compare((T) array[j], pivot) <= 0) {
-                i++;
-                // Troca
-                Object temp = array[i];
-                array[i] = array[j];
-                array[j] = temp;
+        // Percorre de inicio até fim.prev
+        for (Node<T> j = inicio; j != fim; j = j.next) {
+            mc.comparacoes++;
+            if (comparador.compare(j.data, pivoValor) <= 0) {
+                // i++
+                i = (i == null) ? inicio : i.next;
+                
+                // Swap dados (i, j)
+                T temp = i.data;
+                i.data = j.data;
+                j.data = temp;
+                mc.trocas++;
             }
         }
-
-        // Coloca o pivô na posição correta
-        Object temp = array[i + 1];
-        array[i + 1] = array[high];
-        array[high] = temp;
-
-        return i + 1;
+        
+        // Coloca o pivô na posição correta (i + 1)
+        i = (i == null) ? inicio : i.next;
+        T temp = i.data;
+        i.data = fim.data;
+        fim.data = temp;
+        mc.trocas++;
+        
+        return i; // Retorna o nó onde o pivô ficou
     }
 
-    // Busca Binária
-    public T buscaBinaria(T elemento, Comparator<T> comparador) {
-        System.out.println("\n=== BUSCA BINÁRIA ===");
-        System.out.println("Buscando por código (requer lista ordenada)...");
-
-        long startTime = System.nanoTime();
-        int comparacoes = 0;
-
-        // Converter para array ordenado
-        Object[] array = this.toArray();
-        java.util.Arrays.sort(array, (a, b) -> comparador.compare((T) a, (T) b));
-
-        int inicio = 0;
-        int fim = array.length - 1;
-
-        while (inicio <= fim) {
-            comparacoes++;
-            int meio = (inicio + fim) / 2;
-
-            int resultado = comparador.compare((T) array[meio], elemento);
-
-            if (resultado == 0) {
-                long endTime = System.nanoTime();
-                System.out.println("Busca Binária - ENCONTRADO!");
-                System.out.println("Comparações: " + comparacoes);
-                System.out.println("Tempo: " + (endTime - startTime) / 1_000_000.0 + " ms");
-                return (T) array[meio];
-            } else if (resultado < 0) {
-                inicio = meio + 1;
-            } else {
-                fim = meio - 1;
-            }
-        }
-
-        long endTime = System.nanoTime();
-        System.out.println("Busca Binária - NÃO ENCONTRADO");
-        System.out.println("Comparações: " + comparacoes);
-        System.out.println("Tempo: " + (endTime - startTime) / 1_000_000.0 + " ms");
-        return null;
-    }
-
-    // Imprimir lista
-    public void imprimirLista() {
-        Node<T> atual = primeiro;
-        while (atual != null) {
-            System.out.println(atual.data.toString());
-            atual = atual.next;
-        }
-    }
-
-    // Método adicional para imprimir bonito (opcional)
+    // --- UTILITÁRIOS ---
+    
     public void imprimirListaFormatada() {
         Node<T> atual = primeiro;
-        int contador = 1;
-        System.out.println("\n=== LISTA DE ATIVOS ===");
+        int i = 1;
+        System.out.println("------------------------------------------------");
         while (atual != null) {
-            System.out.printf("%d. %s\n", contador, atual.data.toString());
+            System.out.println(i + ". " + atual.data.toString());
             atual = atual.next;
-            contador++;
+            i++;
         }
-        System.out.println("=======================\n");
+        System.out.println("------------------------------------------------");
+    }
+
+    private void exibirMetricas(String algoritmo, long tempoNano, int comp, int trocas) {
+        System.out.printf("[%s] Tempo: %.4f ms | Comparações: %d | Trocas: %d\n", 
+            algoritmo, tempoNano / 1_000_000.0, comp, trocas);
+    }
+
+    // Classe auxiliar interna para passar contadores por referência no recursivo
+    private class MetricasContainer {
+        int comparacoes = 0;
+        int trocas = 0;
     }
 }
