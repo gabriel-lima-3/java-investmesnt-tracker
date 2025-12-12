@@ -24,7 +24,7 @@ public class Investimento {
         this.quantidade = quantidade;
         this.dataInvestimento = dataInvestimento;
         this.valorAtual = valorAtual;
-        this.historicoVariacoes = new ListaDuplamenteEncadeada<>(); // ← ADICIONE ESTA LINHA
+        this.historicoVariacoes = new ListaDuplamenteEncadeada<>();
     }
 
     public Ativo getAtivo() {
